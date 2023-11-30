@@ -39,10 +39,9 @@ class Vec2 {
         return new Vec2(this.x - vector.x, this.y - vector.y);
     }
 
-    scale(value)
+    scale(scalar)
     {
-        this.x *= value;
-        this.y *= value;
+        return new Vec2( this.x * scalar, this.y * scalar );
     }
 }
 
@@ -74,7 +73,7 @@ class Screen
 
                 if(this.pixels[y][x] != Color.WHITE)
                 {
-                    this.canvas.fillRect(x, y, 4, 4);
+                    this.canvas.fillRect(x, y, 2, 2);
                 }
                 this.canvas.fillStyle = Color.WHITE;
             }
@@ -103,6 +102,8 @@ class Model
         this.scale = 1;
         this.theta = 0;
         this.color = color;
+
+        this.transformationMatrix = []
 
         this.minX = vertices[0].x;
         this.maxX = vertices[0].x;
@@ -166,6 +167,17 @@ class Object
         {
             this.rotate(-10)
         }
+
+        if(Keys.Space)
+        {
+            this.scale(1.2)
+        }
+
+        if(Keys.Shift)
+        {
+            this.scale(0.7)
+        }
+
     }
 
     giveModel()
@@ -189,42 +201,56 @@ class Object
         this.position = this.position.add(p);
     }
 
-    // rotate(theta)
+    rotate(theta)
+    {
+        const radians = theta * (Math.PI / 180);
+        var a = 
+        [
+            [Math.cos(radians), -Math.sin(radians), 0],
+            [Math.sin(radians), Math.cos(radians), 0],
+            [ 0, 0, 1 ]
+        ]
+
+        for(let i = 0; i < this.model.vertices.length; i++)
+        {
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1]  ]
+            let ar = multiplyMatrices(b, a);
+            this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1])
+        }
+    }
+
+    // scale(scalar)
     // {
-    //     const radians = theta * (Math.PI / 180);
-    //     var a = 
-    //     [
-    //         [Math.cos(radians), -Math.sin(radians), 0],
-    //         [Math.sin(radians), Math.cos(radians), 0],
-    //         [ 0, 0, 1 ]
-    //     ]
-
-    //     var b = [ [ this.model.vertices[0].x, this.model.vertices[0].y, 1]  ]
-    //     var ar = multiplyMatrices(b, a);
-
-    //     // console.log(ar[0], ar[1])
-    //     this.model.vertices[0] = this.model.vertices[0].add( new Vec2(ar[0], ar[1]))
+    //     for(let i = 0; i < this.model.vertices.length; i++)
+    //     {
+    //         let s = 
+    //         [
+    //             [scalar, 0, 0],
+    //             [0, scalar, 0]
+    //             [0, 0, 1]
+    //         ]
+    //         let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1] ]
+    //         let ar = multiplyMatrices(b, s);
+    //         this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1]);
+    //     }
     // }
 
-    rotate(theta) {
-        const radians = theta * (Math.PI / 180);
-    
+    scale(factor) {
         for (let i = 0; i < this.model.vertices.length; i++) {
             const vertexArray = [this.model.vertices[i].x, this.model.vertices[i].y, 1];
-    
-            const rotationMatrix = [
-                [Math.cos(radians), -Math.sin(radians), 0],
-                [Math.sin(radians), Math.cos(radians), 0],
+
+            const scaleMatrix = [
+                [factor, 0, 0],
+                [0, factor, 0],
                 [0, 0, 1]
             ];
-    
-            const result = multiplyMatrices([vertexArray], rotationMatrix);
-    
-            // Update de positie van de vertex met de nieuwe waarden
+
+            const result = multiplyMatrices([vertexArray], scaleMatrix);
+
+            // Update de positie van de vertex met de nieuwe geschaalde waarden
             this.model.vertices[i] = new Vec2(result[0][0], result[0][1]);
         }
     }
-    
 }
 
 class Graphics 
@@ -312,6 +338,7 @@ function multiplyMatrices(matrix1, matrix2) {
     const result = [];
   
     if (matrix1[0].length != matrix2.length) {
+        console.log(matrix1[0] , matrix2)
       // Controleer of het aantal kolommen van de eerste matrix gelijk is aan het aantal rijen van de tweede matrix
       console.error("Kan matrices niet vermenigvuldigen. Aantal kolommen van matrix1 moet gelijk zijn aan het aantal rijen van matrix2.");
       return null;
@@ -327,7 +354,6 @@ function multiplyMatrices(matrix1, matrix2) {
         result[i][j] = 0;
         for (let k = 0; k < commonDim; k++) {
           result[i][j] += matrix1[i][k] * matrix2[k][j];
-          console.log(result[i][j])
         }
       }
     }
@@ -343,6 +369,13 @@ var verts =
     new Vec2(50, 50),
     new Vec2(50, 100),
     new Vec2(100, 100),
+    new Vec2(50, 50),
+    new Vec2(100, 50),
+    new Vec2(100, 100),
+    new Vec2(3, 3),
+    new Vec2(100, 10),
+    new Vec2(50, 50),
+    new Vec2(290, 410),
     new Vec2(100, 50)
 ]
 
@@ -357,7 +390,6 @@ function update()
     object.transform();
     screen.drawCanvas();
     console.log(object.position)
-    //console.log(Keys)
 };
 
 
