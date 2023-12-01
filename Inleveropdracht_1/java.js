@@ -219,38 +219,39 @@ class Object
         }
     }
 
-    // scale(scalar)
-    // {
-    //     for(let i = 0; i < this.model.vertices.length; i++)
-    //     {
-    //         let s = 
-    //         [
-    //             [scalar, 0, 0],
-    //             [0, scalar, 0]
-    //             [0, 0, 1]
-    //         ]
-    //         let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1] ]
-    //         let ar = multiplyMatrices(b, s);
-    //         this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1]);
-    //     }
-    // }
-
-    scale(factor) {
-        for (let i = 0; i < this.model.vertices.length; i++) {
-            const vertexArray = [this.model.vertices[i].x, this.model.vertices[i].y, 1];
-
-            const scaleMatrix = [
-                [factor, 0, 0],
-                [0, factor, 0],
-                [0, 0, 1]
-            ];
-
-            const result = multiplyMatrices([vertexArray], scaleMatrix);
-
-            // Update de positie van de vertex met de nieuwe geschaalde waarden
-            this.model.vertices[i] = new Vec2(result[0][0], result[0][1]);
+    scale(scalar)
+    {
+        
+        let s = 
+        [
+            [scalar, 0, 0],
+            [0, scalar, 0],
+            [0, 0, 1]
+        ]
+        for(let i = 0; i < this.model.vertices.length; i++)
+        {
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1] ]
+            let ar = multiplyMatrices(b, s);
+            this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1]);
         }
     }
+
+//     scale(factor) {
+//         for (let i = 0; i < this.model.vertices.length; i++) {
+//             const vertexArray = [this.model.vertices[i].x, this.model.vertices[i].y, 1];
+
+//             const scaleMatrix = [
+//                 [factor, 0, 0],
+//                 [0, factor, 0],
+//                 [0, 0, 1]
+//             ];
+
+//             const result = multiplyMatrices([vertexArray], scaleMatrix);
+
+//             // Update de positie van de vertex met de nieuwe geschaalde waarden
+//             this.model.vertices[i] = new Vec2(result[0][0], result[0][1]);
+//         }
+//     }
 }
 
 class Graphics 
