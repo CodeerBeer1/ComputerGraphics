@@ -20,7 +20,10 @@ const Keys =
     Up: false,
     Down: false,
     Left: false,
-    Right: false
+    Right: false,
+
+    Point: false,
+    Slash: false
 }
 
 class Vec2 {
@@ -42,6 +45,29 @@ class Vec2 {
     scale(scalar)
     {
         return new Vec2( this.x * scalar, this.y * scalar );
+    }
+}
+
+class Vec3 {
+    constructor(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    add(vector)
+    {
+        return new Vec3(this.x + vector.x, this.y + vector.y, this.z + vector.z);
+    }
+
+    sub(vector)
+    {
+        return new Vec3(this.x - vector.x, this.y - vector.y, this.z - vector.z);
+    }
+
+    scale(scalar)
+    {
+        return new Vec3( this.x * scalar, this.y * scalar, this.z * scalar);
     }
 }
 
@@ -105,20 +131,21 @@ class Model
 
         this.transformationMatrix = []
 
-        this.minX = vertices[0].x;
-        this.maxX = vertices[0].x;
-        this.minY = vertices[0].y;
-        this.maxY = vertices[0].y;
+        this.min = new Vec3( vertices[0].x, vertices[0].y, vertices[0].z);
+        this.max = new Vec3( vertices[0].x, vertices[0].y, vertices[0].z);
 
         vertices.forEach((v) => {
-            if (v.x < this.minX) this.minX = v.x;
-            if (v.x > this.maxX) this.maxX = v.x;
+            if (v.x < this.min.x) this.min.x = v.x;
+            if (v.x > this.max.x) this.max.x = v.x;
 
-            if (v.y > this.maxY) this.maxY = v.y;
-            if (v.y < this.minY) this.minY = v.y;
+            if (v.y > this.max.y) this.max.y = v.y;
+            if (v.y < this.min.y) this.min.y = v.y;
+
+            if (v.z > this.max.z) this.max.z = v.z;
+            if (v.z < this.minzy) this.min.z = v.z;
         });
 
-        this.offset = new Vec2 ( (this.minX + this.maxX ) / 2, (this.minY + this.maxY ) / 2 )
+        this.offset = new Vec3 ( (this.min.x + this.max.x ) / 2, (this.min.y + this.max.y ) / 2, (this.min.z + this.max.z ) / 2)
 
         for(let i = 0; i < this.vertices.length; i++)
         {
@@ -138,44 +165,97 @@ class Object
 
     transform()
     {
+
+
+        // var projMatrix = 
+        // [
+
+        //     [-1, 0 ,0, 0],
+        //     [0, -1, 0, 0],
+        //     [0, 0, -1, 0],
+        //     [0, 0, 1, 0]
+
+        // ]
+
+        // var points = []
+
+        // function divideByfourthcomponent(m)
+        // {
+        //     for(let i = 0; i < m.length; i++)
+        //     {
+        //         m[i] /= m[3];
+        //     }
+
+        //     return m;
+        // }
+
+        // for(let i = 0; i < this.model.vertices.length; i++)
+        // {
+        //     let ver = [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z, 1 ]
+        //     let mul = math.multiply(projMatrix, ver);
+
+        //     let divided = divideByfourthcomponent(mul);
+        //     points.push(new Vec2(divided[0], divided[1]));
+        // }
+
         if(Keys.W)
         {
-            this.translate(new Vec2( 0, -4 ));
+            this.translate(new Vec3( 0, 0, 4 ));
         }
 
         if(Keys.A)
         {
-            this.translate(new Vec2( -4, 0 ));
+            this.translate(new Vec3( -4, 0, 0 ));
         }
 
         if(Keys.S)
         {
-            this.translate(new Vec2( 0, 4 ));
+            this.translate(new Vec3( 0, 0, -4 ));
         }
 
         if(Keys.D)
         {
-            this.translate(new Vec2( 4, 0 ));
+            this.translate(new Vec3( 4, 0, 0 ));
         }
 
         if(Keys.Up)
         {
-            this.rotate(10)
+            this.rotateX(4)
         }
 
         if(Keys.Down)
         {
-            this.rotate(-10)
+            this.rotateX(-4)
+        }
+
+        if(Keys.Left)
+        {
+            this.rotateY(4)
+        }
+
+        if(Keys.Right)
+        {
+            this.rotateY(-4)
+        }
+
+        if(Keys.Point)
+        {
+            this.rotateZ(4)
+        }
+
+        if(Keys.Slash)
+        {
+            this.rotateZ(-4)
         }
 
         if(Keys.Space)
         {
-            this.scale(1.2)
+            this.translate(new Vec3( 0, -4, 0 ));
         }
 
         if(Keys.Shift)
         {
-            this.scale(0.7)
+            this.translate(new Vec3( 0, 4, 0 ));
         }
 
     }
@@ -193,15 +273,24 @@ class Object
 
     render()
     {
-        gfx.drawShape(this.giveModel());
+        gfx.drawModel(this.giveModel());
     }
 
     translate(p)
     {   
-        this.position = this.position.add(p);
+
+        const translationMatrix = [
+            [1, 0, 0, p.x],
+            [0, 1, 0, p.y],
+            [0, 0, 1, p.z],
+            [0, 0, 0, 1]
+        ];
+
+        this.position = this.position.add(p)
+
     }
 
-    rotate(theta)
+    rotateZ(theta)
     {
         const radians = theta * (Math.PI / 180);
         var a = 
@@ -213,9 +302,45 @@ class Object
 
         for(let i = 0; i < this.model.vertices.length; i++)
         {
-            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1]  ]
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z]  ]
             let ar = multiplyMatrices(b, a);
-            this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1])
+            this.model.vertices[i] = new Vec3(ar[0][0], ar[0][1], ar[0][2])
+        }
+    }
+
+    rotateX(theta)
+    {
+        const radians = theta * (Math.PI / 180);
+        var a = 
+        [
+            [Math.cos(radians), 0, Math.sin(radians)],
+            [0, 1, 0],
+            [-Math.sin(radians), 0, Math.cos(radians), 0]
+        ]
+
+        for(let i = 0; i < this.model.vertices.length; i++)
+        {
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z]  ]
+            let ar = multiplyMatrices(b, a);
+            this.model.vertices[i] = new Vec3(ar[0][0], ar[0][1], ar[0][2])
+        }
+    }
+
+    rotateY(theta)
+    {
+        const radians = theta * (Math.PI / 180);
+        var a = 
+        [
+            [1, 0, 0, 0],
+            [0, Math.cos(radians), -Math.sin(radians)],
+            [0, Math.sin(radians), Math.cos(radians)]
+        ]
+
+        for(let i = 0; i < this.model.vertices.length; i++)
+        {
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z]  ]
+            let ar = multiplyMatrices(b, a);
+            this.model.vertices[i] = new Vec3(ar[0][0], ar[0][1], ar[0][2])
         }
     }
 
@@ -232,26 +357,9 @@ class Object
         {
             let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, 1] ]
             let ar = multiplyMatrices(b, s);
-            this.model.vertices[i] = new Vec2(ar[0][0], ar[0][1]);
+            this.model.vertices[i] = new Vec3(ar[0][0], ar[0][1], 0);
         }
     }
-
-//     scale(factor) {
-//         for (let i = 0; i < this.model.vertices.length; i++) {
-//             const vertexArray = [this.model.vertices[i].x, this.model.vertices[i].y, 1];
-
-//             const scaleMatrix = [
-//                 [factor, 0, 0],
-//                 [0, factor, 0],
-//                 [0, 0, 1]
-//             ];
-
-//             const result = multiplyMatrices([vertexArray], scaleMatrix);
-
-//             // Update de positie van de vertex met de nieuwe geschaalde waarden
-//             this.model.vertices[i] = new Vec2(result[0][0], result[0][1]);
-//         }
-//     }
 }
 
 class Graphics 
@@ -303,7 +411,7 @@ class Graphics
     }
 
     // Dit method maakt een polygoon op basis van een gegeven model.
-    drawShape(model)
+    drawModel(model)
     {
         for(var i = 0; i < model.vertices.length -1; i++) // Trekt een voor een de lijnen.
         { 
@@ -314,41 +422,21 @@ class Graphics
 
 }
 
-// function multiplyMatrices(a, b)
-// {
-
-//     const ab = [];
-//     if( a[0].length == b.length )
-//     {
-//         const r = a.length; // column size
-//         const c = b[0].length; // row size
-//         for(let q = 0; q <= r; q++)
-//         {
-//             for(let i = 0; i <= c; i++)
-//             {
-//                 ab[q][i] += ( a[q][i] * b[i][q] );
-//                 console.log( a[q][i] , b[i][q], ab);
-//             }
-//         }
-//     }
-
-//     return ab;
-// }
-
 function multiplyMatrices(matrix1, matrix2) {
     const result = [];
-  
     if (matrix1[0].length != matrix2.length) {
-        console.log(matrix1[0] , matrix2)
       // Controleer of het aantal kolommen van de eerste matrix gelijk is aan het aantal rijen van de tweede matrix
       console.error("Kan matrices niet vermenigvuldigen. Aantal kolommen van matrix1 moet gelijk zijn aan het aantal rijen van matrix2.");
       return null;
     }
+
+
     
     const rows = matrix1.length;
     const cols = matrix2[0].length;
     const commonDim = matrix1[0].length;
-  
+    console.log(rows, cols, commonDim);
+    console.log(matrix1, matrix2);
     for (let i = 0; i < rows; i++) {
       result[i] = [];
       for (let j = 0; j < cols; j++) {
@@ -358,31 +446,45 @@ function multiplyMatrices(matrix1, matrix2) {
         }
       }
     }
-  
+           console.log(result)
+ 
     return result;
   }
 
 var screen = new Screen('canvas', 500, 500);
 var gfx = new Graphics(screen);
 
-var verts =
-[
-    new Vec2(50, 50),
-    new Vec2(50, 100),
-    new Vec2(100, 100),
-    new Vec2(50, 50),
-    new Vec2(100, 50),
-    new Vec2(100, 100),
-    new Vec2(3, 3),
-    new Vec2(100, 10),
-    new Vec2(50, 50),
-    new Vec2(290, 410),
-    new Vec2(100, 50)
-]
 
-var object = new Object(new Vec2(250, 250), new Model( verts, Color.BLUE ));
-screen.blanco();
-screen.drawCanvas();
+var verts = [
+    new Vec3(-50, -50, -50),
+    new Vec3(-50, 50, -50),
+    new Vec3(50, 50, -50),
+    new Vec3(50, -50, -50),
+    new Vec3(-50, -50, -50),
+
+    new Vec3(-50, -50, -60),
+    new Vec3(-50, 50, -60),
+    new Vec3(50, 50, -60),
+    new Vec3(50, -50, -60),
+
+    new Vec3(-50, -50, -60),
+    new Vec3(-50, 50, -260),
+    new Vec3(-50, 50, -150),
+
+    new Vec3(50, 50, -90),
+    new Vec3(50, 50, -90),
+
+    new Vec3(50, -50, -100),
+    new Vec3(50, -50, -500),
+
+    
+];
+
+
+
+var object = new Object(new Vec3(250, 250, 0), new Model( verts, Color.BLUE ));
+
+
 
 function update()
 {
@@ -391,8 +493,13 @@ function update()
     object.transform();
     screen.drawCanvas();
     console.log(object.position)
+    
 };
 
+
+
+update()
+var s = setInterval(function() { update() }, 10);
 
 // Voeg een event listener toe aan het document
 document.addEventListener('keydown', function(event) {
@@ -426,6 +533,12 @@ document.addEventListener('keydown', function(event) {
             break;
 
         case ' ': Keys.Space = true;
+
+        case '.': Keys.Point = true;
+            break;
+
+        case '/': Keys.Slash = true;
+            break;
     }
 });
 
@@ -460,7 +573,11 @@ document.addEventListener('keyup', function(event) {
             break;
 
         case ' ': Keys.Space = false;
+
+        case '.': Keys.Point = false;
+            break;
+
+        case '/': Keys.Slash = false;
+            break;
     }
 });
-
-var s = setInterval(function() { update() }, 10);
