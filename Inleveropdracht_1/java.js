@@ -73,8 +73,10 @@ class Vec3 {
 
 class Screen 
 {
-    constructor(canvas, width, height) {
+    constructor(canvas, width, height, position) {
+        this.position = position
         this.canvas = document.getElementById(canvas);
+
         this.width = width;
         this.height = height;
         this.setupCanvas();
@@ -85,7 +87,56 @@ class Screen
         this.canvas.width = this.width;
         this.canvas.height = this.height;
         this.canvas = this.canvas.getContext('2d');
+        // let vertexShader = this.gl.createShader(this.gl.VERTEX_SHADER);
+        // let vsSource = 
+        // `#version 300 es
+        //     in vec3 pos;
+            
+        //     void main()
+        //     {
+        //         gl_position = vec4(pos, 1.0);
+        //     }
+        // `;
 
+        // this.gl.shaderSource(vertexShader, vsSource);
+        // this.gl.compileShader(vertexShader)
+
+        // let status = this.gl.getShaderParameter(vertexShader, this.gl.COMPILE_STATUS)
+
+        // let log = this.gl.getShaderInfoLog()
+        //     console.log(status)
+        // let fragmentShader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
+        // let frSource = 
+        // `#version 300 es
+        //     precision medium float;
+        //     out vec4 fragColor;
+            
+        //     void main()
+        //     {
+        //         fragColor = vec4(0.5, 0.5, 1.0, 1.0);
+        //     }
+        // `;
+
+        // this.gl.shaderSource(fragmentShader, frSource)
+        // this.gl.compileShader(fragmentShader);
+
+        // var program = this.gl.createProgram();
+        // this.gl.attachShader(program, vertexShader);
+        // this.gl.attachShader(program, fragmentShader);
+        // this.gl.linkProgram(program);
+        // this.gl.useProgram(program);
+
+        // let buffer = this.gl.createBuffer();
+        // this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
+        // this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([
+        //     -1, 0, 0,
+        //     0, 1, 0,
+        //     1, -1, 0]), this.gl.STATIC_DRAW);
+            
+        // var attr = this.gl.getAttribLocation(program, "pos");
+        // this.gl.vertexAttribPointer(attr, 3, this.gl.FLOAT, this.gl.FALSE, 0, 0);
+        // this.gl.enableVertexAttribArray(attr);
+           
         this.blanco()
     }
 
@@ -125,6 +176,7 @@ class Model
     constructor(vertices, color)
     {
         this.vertices = vertices;
+        this.projectionVertices = [];
         this.scale = 1;
         this.theta = 0;
         this.color = color;
@@ -145,7 +197,7 @@ class Model
             if (v.z < this.minzy) this.min.z = v.z;
         });
 
-        this.offset = new Vec3 ( (this.min.x + this.max.x ) / 2, (this.min.y + this.max.y ) / 2, (this.min.z + this.max.z ) / 2)
+        this.offset = new Vec3 ( (this.min.x + this.max.x ) / 2, (this.min.y + this.max.y ) / 2, 2 * this.max.z)
 
         for(let i = 0; i < this.vertices.length; i++)
         {
@@ -165,38 +217,7 @@ class Object
 
     transform()
     {
-
-
-        // var projMatrix = 
-        // [
-
-        //     [-1, 0 ,0, 0],
-        //     [0, -1, 0, 0],
-        //     [0, 0, -1, 0],
-        //     [0, 0, 1, 0]
-
-        // ]
-
-        // var points = []
-
-        // function divideByfourthcomponent(m)
-        // {
-        //     for(let i = 0; i < m.length; i++)
-        //     {
-        //         m[i] /= m[3];
-        //     }
-
-        //     return m;
-        // }
-
-        // for(let i = 0; i < this.model.vertices.length; i++)
-        // {
-        //     let ver = [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z, 1 ]
-        //     let mul = math.multiply(projMatrix, ver);
-
-        //     let divided = divideByfourthcomponent(mul);
-        //     points.push(new Vec2(divided[0], divided[1]));
-        // }
+        
 
         if(Keys.W)
         {
@@ -260,9 +281,16 @@ class Object
 
     }
 
+    render()
+    {
+        gfx.drawModel(this.giveModel());
+    }
+
+
     giveModel()
     {
         var m = new Model([...this.model.vertices], this.model.color);
+        m.projectionVertices = this.model.projectionVertices;
 
         for (let i = 0; i < m.vertices.length; i++) {
             m.vertices[i] = m.vertices[i].add(this.position);
@@ -271,10 +299,6 @@ class Object
         return m;
     }
 
-    render()
-    {
-        gfx.drawModel(this.giveModel());
-    }
 
     translate(p)
     {   
@@ -315,12 +339,12 @@ class Object
         [
             [Math.cos(radians), 0, Math.sin(radians)],
             [0, 1, 0],
-            [-Math.sin(radians), 0, Math.cos(radians), 0]
+            [-Math.sin(radians), 0, Math.cos(radians)]
         ]
 
         for(let i = 0; i < this.model.vertices.length; i++)
         {
-            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z]  ]
+            let b = [ [ this.model.vertices[i].x, this.model.vertices[i].y, this.model.vertices[i].z]]
             let ar = multiplyMatrices(b, a);
             this.model.vertices[i] = new Vec3(ar[0][0], ar[0][1], ar[0][2])
         }
@@ -331,7 +355,7 @@ class Object
         const radians = theta * (Math.PI / 180);
         var a = 
         [
-            [1, 0, 0, 0],
+            [1, 0, 0],
             [0, Math.cos(radians), -Math.sin(radians)],
             [0, Math.sin(radians), Math.cos(radians)]
         ]
@@ -413,11 +437,39 @@ class Graphics
     // Dit method maakt een polygoon op basis van een gegeven model.
     drawModel(model)
     {
-        for(var i = 0; i < model.vertices.length -1; i++) // Trekt een voor een de lijnen.
+        let v = model.projectionVertices;
+        for(let i = 0; i < v.length -1; i++) // Trekt een voor een de lijnen.
         { 
-            this.drawLine(model.vertices[i], model.vertices[i +1], model.color);
+            this.drawLine(v[i], v[i +1], model.color);
         }
-        this.drawLine(model.vertices.slice(-1)[0], model.vertices[0], model.color);
+        // this.drawLine(v.slice(-1)[0], v[0], model.color);
+    }
+
+    project(object)
+    {
+        let projectionMatrix = 
+        [
+            [-1, 0, 0, 0],
+            [ 0,-1, 0, 0],
+            [ 0, 0 , 1 / this.screen.position.z, 0],
+            [ 0, 0, 1, 0]
+        ];
+
+        let model = object.model
+        
+        let v = model.vertices;
+
+        for(let i = 0; i < v.length; i++)
+        {
+            let b = [ v[i].x, v[i].y, v[i].z, 1 ];
+            let ar = math.multiply(projectionMatrix, b);
+            // Divide by w component to get the normalized device coordinates
+
+            model.projectionVertices[i] = new Vec2(ar[0] / ar[3], ar[1] / ar[3]);
+            model.projectionVertices[i] = model.projectionVertices[i].scale(100)
+            model.projectionVertices[i] = model.projectionVertices[i].add(object.position)
+
+        }
     }
 
 }
@@ -435,8 +487,7 @@ function multiplyMatrices(matrix1, matrix2) {
     const rows = matrix1.length;
     const cols = matrix2[0].length;
     const commonDim = matrix1[0].length;
-    console.log(rows, cols, commonDim);
-    console.log(matrix1, matrix2);
+
     for (let i = 0; i < rows; i++) {
       result[i] = [];
       for (let j = 0; j < cols; j++) {
@@ -446,52 +497,50 @@ function multiplyMatrices(matrix1, matrix2) {
         }
       }
     }
-           console.log(result)
  
     return result;
   }
 
-var screen = new Screen('canvas', 500, 500);
+var screen = new Screen('canvas', 500, 500, new Vec3(0, 0, 10));
 var gfx = new Graphics(screen);
 
 
 var verts = [
-    new Vec3(-50, -50, -50),
-    new Vec3(-50, 50, -50),
-    new Vec3(50, 50, -50),
-    new Vec3(50, -50, -50),
-    new Vec3(-50, -50, -50),
+    new Vec3(0, 0, 0),          
+    new Vec3(50, 0, 0),         
+    new Vec3(50, 50, 0),        
+    new Vec3(0, 50, 0),
+    new Vec3(0, 0, 0),   
 
-    new Vec3(-50, -50, -60),
-    new Vec3(-50, 50, -60),
-    new Vec3(50, 50, -60),
-    new Vec3(50, -50, -60),
+    new Vec3(0, 0, 50),         
+    new Vec3(50, 0, 50),        
+    new Vec3(50, 50, 50),       
+    new Vec3(0, 50, 50),
+    new Vec3(0, 0, 50),
 
-    new Vec3(-50, -50, -60),
-    new Vec3(-50, 50, -260),
-    new Vec3(-50, 50, -150),
-
-    new Vec3(50, 50, -90),
-    new Vec3(50, 50, -90),
-
-    new Vec3(50, -50, -100),
-    new Vec3(50, -50, -500),
+    new Vec3(50, 0, 50),         
+    new Vec3(50, 0, 0),        
+    new Vec3(50, 50, 0),       
+    new Vec3(50, 50, 50),
+    new Vec3(0, 50, 50),
+    new Vec3(0, 50, 0)
 
     
 ];
 
 
-
-var object = new Object(new Vec3(250, 250, 0), new Model( verts, Color.BLUE ));
+var object = new Object(new Vec3(250, 250, -10), new Model( verts, Color.BLUE ));
 
 
 
 function update()
 {
     screen.blanco();
-    object.render();
     object.transform();
+    gfx.project(object);
+    object.render();
     screen.drawCanvas();
+
     console.log(object.position)
     
 };
@@ -533,6 +582,7 @@ document.addEventListener('keydown', function(event) {
             break;
 
         case ' ': Keys.Space = true;
+            break;
 
         case '.': Keys.Point = true;
             break;
